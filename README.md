@@ -31,7 +31,6 @@ export PYSPARK_SUBMIT_ARGS='--master yarn-client
 ```
 from pyspark import SparkContext, SparkConf
 from py4j.java_gateway import Py4JNetworkError
-from pyspark.sql import SQLContext 
 
 def create_kafka_params():
     sc._jvm.java.lang.System.setProperty("java.security.auth.login.config",
