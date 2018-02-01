@@ -22,16 +22,53 @@ public class KafkaClientsPythonHelperTest {
                 true, new StringSerializer(), new StringSerializer());
     }
 
-    @Test
-    public void testSendSuccess() {
+    @Test(expected = IllegalArgumentException.class)
+    public void testPublishSingleValidMessageWithNoTopic() {
         Map<String, Object> kafkaParams = createKafkaParams();
-        KafkaClientsPythonHelper helper = new KafkaClientsPythonHelper();
+        KafkaClientsPythonHelper helper = null;
+        try {
+            helper = createKafkaClientsPythonHelper();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        send(kafkaParams, helper, "0", "testValue", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPublishSingleValidMessageWithNoValue() {
+        Map<String, Object> kafkaParams = createKafkaParams();
+        KafkaClientsPythonHelper helper = null;
+        try {
+            helper = createKafkaClientsPythonHelper();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        send(kafkaParams, helper, "0", null, "topic_test");
+    }
+
+    @Test
+    public void testPublishSingleValidMessage() {
+        Map<String, Object> kafkaParams = createKafkaParams();
+        KafkaClientsPythonHelper helper;
+        try {
+            helper = createKafkaClientsPythonHelper();
+            send(kafkaParams, helper, "0", "testValue", "topic_test");
+            List<ProducerRecord<String, String>> history = ((MockProducer) helper.producer).history();
+            List<ProducerRecord<String, String>> expected = Arrays.asList(
+                    new ProducerRecord<>("topic_test", "0", "testValue"));
+            Assert.assertEquals("Sent didn't match expected", expected, history);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private KafkaClientsPythonHelper createKafkaClientsPythonHelper() throws ClassNotFoundException,
+            InstantiationException, IllegalAccessException {
+        KafkaClientsPythonHelper helper;
+        Class clazz = Class.forName("com.github.kafka.clients.KafkaClientsPythonHelper");
+        helper = (KafkaClientsPythonHelper)clazz.newInstance();
         helper.producer = producer;
-        send(kafkaParams, helper, "0");
-        List<ProducerRecord<String, String>> history = ((MockProducer) helper.producer).history();
-        List<ProducerRecord<String, String>> expected = Arrays.asList(
-                new ProducerRecord<>("topic_test", "0", "testValue"));
-        Assert.assertEquals("Sent didn't match expected", expected, history);
+        return helper;
     }
 
     private Map<String, Object> createKafkaParams() {
@@ -50,10 +87,12 @@ public class KafkaClientsPythonHelperTest {
         return kafkaParams;
     }
 
-    private void send(Map<String, Object> kafkaParams, KafkaClientsPythonHelper helper, String key) {
+    private void send(
+            Map<String, Object> kafkaParams, KafkaClientsPythonHelper helper, String key,
+            String value, String topic) throws IllegalArgumentException {
         try {
             helper.createProducer(kafkaParams);
-            helper.send("topic_test", key, "testValue");
+            helper.send(topic, key, value);
         } finally {
             helper.shutdownProducer();
         }

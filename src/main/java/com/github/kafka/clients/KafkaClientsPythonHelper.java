@@ -11,17 +11,18 @@ public class KafkaClientsPythonHelper {
 
     protected Producer<String, String> producer;
 
-    public KafkaClientsPythonHelper() {
+    public void send(String topic, String key, String value) {
+        validate(topic, value);
+        producer.send(new ProducerRecord<>(topic, key, value));
     }
 
-    public void send(String topic, String key, String value) {
+    private void validate(String topic, String value) {
         if (topic == null || topic.isEmpty()) {
             throw new IllegalArgumentException("Topic cannot be null or empty.");
         }
         if (value == null || value.isEmpty()) {
             throw new IllegalArgumentException("Value cannot be null or empty.");
         }
-        producer.send(new ProducerRecord<>(topic, key, value));
     }
 
     public void createProducer(Map<String, Object> kafkaParams) throws IllegalArgumentException {
@@ -33,7 +34,7 @@ public class KafkaClientsPythonHelper {
                 producer = new KafkaProducer<>(kafkaParams);
             }
         } catch (KafkaException e) {
-            throw e;
+            throw new KafkaException("Error creating KafkaProducer", e);
         }
     }
 
