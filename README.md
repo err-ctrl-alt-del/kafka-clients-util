@@ -28,9 +28,12 @@ export PYSPARK_SUBMIT_ARGS='--master yarn-client
  ```
 
 ## Example
-```
+```python
 from pyspark import SparkContext, SparkConf
 from py4j.java_gateway import Py4JNetworkError
+
+log4jLogger = sc._jvm.org.apache.log4j 
+log = log4jLogger.LogManager.getLogger(__name__) 
 
 def create_kafka_params():
     sc._jvm.java.lang.System.setProperty("java.security.auth.login.config",
@@ -48,16 +51,22 @@ def create_kafka_params():
 
 def send(message):
     try:
-        kafkaClientsHelper = sc._gateway.jvm.com.github.kafka.clients.KafkaClientsPythonHelper()
+        log.info("Creating Kafka producer...")
+        kafkaClientsHelperClass = sc._jvm.java.lang.Thread.currentThread().getContextClassLoader()\
+                .loadClass("com.github.kafka.clients.KafkaClientsPythonHelper")
+        kafkaClientsHelper = kafkaClientsHelperClass.newInstance()
         kafkaClientsHelper.createProducer(create_kafka_params())
+        log.info("Sending message...")
         kafkaClientsHelper.send("topic_example", sc._gateway.jvm.java.util.UUID.randomUUID().toString(), message)
-    except Py4JNetworkError:
-        print("Py4JNetworkError")
+    except Py4JJavaError as e:
+        if 'ClassNotFoundException' in str(e.java_exception):
+            log.error(e.java_exception)
+        raise e
     except Exception:
         print("Exception")
     finally:
-        kafkaClientsHelper.shutdownProducer()
-        
+        log.info("Shutting down Kafka producer...")
+        kafkaClientsHelper.shutdownProducer()        
 ```
 
 ## Authors
