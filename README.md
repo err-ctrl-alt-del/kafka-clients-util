@@ -1,5 +1,4 @@
-# kafka-clients-util
-Java Utilities for PySpark Kafka Clients (Kerberos)
+# Java Utilities for PySpark Kafka Clients (Kerberos)
 
 ## Getting Started
 ```
